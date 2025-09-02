@@ -1,0 +1,495 @@
+<!DOCTYPE html><html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>TrafficSim v0.7 — Verkehrsnetz + Kreuzungen (Vorfahrt) • Steuerung (E1&E3) • Inspector</title>
+  <style>
+    :root{
+      --bg:#000; --panel:#141414; --panel-border:#2a2a2a; --text:#fff; --muted:#bdbdbd;
+      --accent:#5ec8ff; --shadow:0 8px 24px rgba(0,0,0,0.45);
+    }
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:14px system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}/* Layout */
+#layout{height:100%;display:grid;grid-template-columns:1fr 460px;grid-template-rows:1fr;gap:8px;padding:8px;box-sizing:border-box}
+#map{position:relative;background:#111;border:1px solid var(--panel-border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+#rightCol{display:flex;flex-direction:column;gap:8px;min-width:320px}
+
+.panel{background:var(--panel);border:1px solid var(--panel-border);border-radius:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:0}
+.panel header{position:sticky;top:0;background:var(--panel);padding:10px 12px;border-bottom:1px solid var(--panel-border);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.title{font-weight:600}
+.pill{display:inline-block;border:1px solid var(--panel-border);border-radius:999px;padding:3px 10px;font-size:12px;color:#cfcfcf}
+.body{overflow:auto;padding:10px 12px}
+
+.controls{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.row{display:contents}
+.row label{color:var(--muted)}
+.row input[type="range"]{width:160px}
+.row .val{min-width:64px;text-align:right}
+.row select{width:160px}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+button{appearance:none;background:#1f1f1f;border:1px solid var(--panel-border);color:#fff;border-radius:10px;padding:9px 12px}
+button:active{transform:translateY(1px)}
+
+/* Inspector */
+#inspector .body{overflow:auto}
+#inspector table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+#inspector th,#inspector td{border-bottom:1px solid #262626;padding:8px 10px;text-align:left}
+#inspector th{position:sticky;top:46px;background:var(--panel);z-index:1}
+#inspector tr:hover{background:#1b1b1b;cursor:pointer}
+.sel{outline:2px solid var(--accent);outline-offset:2px}
+.muted{color:var(--muted)}
+
+/* Canvas */
+#cv{position:absolute;inset:0;display:block;width:100%;height:100%}
+
+/* Mobile */
+@media (max-width: 980px){
+  html,body{font-size:16px}
+  #layout{grid-template-columns:1fr;grid-template-rows:minmax(40vh,58vh) auto auto;gap:8px}
+  #rightCol{min-width:0}
+}
+
+  </style>
+</head>
+<body>
+  <div id="layout">
+    <section id="map">
+      <canvas id="cv"></canvas>
+    </section>
+    <section id="rightCol">
+      <!-- CONTROL PANEL (Ebenen 1 & 3) -->
+      <section id="controls" class="panel">
+        <header>
+          <div class="title">Steuerung</div>
+          <div class="pill" id="simState">läuft</div>
+        </header>
+        <div class="body">
+          <div class="controls">
+            <!-- Ebene 1 -->
+            <div class="row"><label>Spawnrate je Einfahrt</label><div class="val"><span id="spawnRateVal">0.50</span> /s</div></div>
+            <input id="spawnRate" type="range" min="0" max="2" step="0.05" value="0.5" /><div class="row"><label>Fahrzeugmix LKW</label><div class="val"><span id="mixTruckVal">15</span>%</div></div>
+        <input id="mixTruck" type="range" min="0" max="80" step="1" value="15" />
+
+        <div class="row"><label>Max. Geschwindigkeit</label><div class="val"><span id="vmaxVal">50</span> km/h</div></div>
+        <input id="vmax" type="range" min="20" max="70" step="5" value="50" />
+
+        <div class="row"><label>Zeitraffer</label><div class="val"><span id="timeScaleVal">1.0</span>×</div></div>
+        <input id="timeScale" type="range" min="0.25" max="5" step="0.25" value="1" />
+
+        <div class="row"><label class="muted">Steuerung</label>
+          <div class="btns">
+            <button id="pauseBtn">⏸︎ Pause</button>
+            <button id="resetBtn">⟲ Reset</button>
+          </div>
+        </div>
+
+        <!-- Ebene 3 -->
+        <div class="row"><label>Fahrerprofil</label>
+          <select id="driverPreset">
+            <option value="normal" selected>normal</option>
+            <option value="defensiv">defensiv</option>
+            <option value="aggressiv">aggressiv</option>
+          </select>
+        </div>
+        <div></div>
+
+        <div class="row"><label>Sichtweite (Skalierung)</label><div class="val"><span id="sightScaleVal">1.0</span>×</div></div>
+        <input id="sightScale" type="range" min="0.5" max="2" step="0.1" value="1" />
+
+        <div class="row"><label>Reaktionszeit‑Streuung</label><div class="val">±<span id="tauSdVal">0.15</span> s</div></div>
+        <input id="tauSd" type="range" min="0.05" max="0.5" step="0.05" value="0.15" />
+
+      </div>
+    </div>
+  </section>
+
+  <!-- INSPECTOR -->
+  <section id="inspector" class="panel" style="min-height:0;flex:1 1 auto;">
+    <header>
+      <div class="title">Inspector</div>
+      <div class="pill" id="count">0 Fahrzeuge</div>
+    </header>
+    <div class="body">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Typ</th>
+            <th>v (km/h)</th>
+            <th>a</th>
+            <th>v₀</th>
+            <th>T</th>
+            <th>τ</th>
+            <th>State</th>
+            <th>Edge</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+</section>
+
+  </div><script>
+'use strict';
+(() => {
+  // ====== Global State ======
+  const cars = []; // vehicles
+  const carRow = new Map(); // id -> <tr>
+  let selectedId = null;
+  let paused = false;
+  let timeScale = 1.0;
+
+  // ====== Canvas Setup ======
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  let W=800, H=600;
+
+  const mapEl = document.getElementById('map');
+  const ro = new ResizeObserver(()=>{ fitToMap(); rebuildGeometry(); });
+  ro.observe(mapEl);
+
+  function fitToMap(){
+    const r = mapEl.getBoundingClientRect();
+    W = Math.max(300, r.width); H = Math.max(300, r.height);
+    cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+
+  // ====== Model Parameters ======
+  const M_PER_PX = 2; // 2 m/px
+  let V_MAX_KMH = 50; // UI driven
+  function kmhToPxps(kmh){ return (kmh/3.6)/M_PER_PX; }
+  function pxpsToKmh(pxps){ return pxps*M_PER_PX*3.6; }
+  function V_MAX_PX(){ return kmhToPxps(V_MAX_KMH); }
+
+  const laneWidth = 4; // px (each lane width); total road width = 8 px
+  const stopDist = 6;  // px before node center
+  const brakingZone = 40; // px distance to stop to start queuing
+  const crossTime = 0.35; // s reservation per crossing
+
+  // Spawn controls
+  let spawnRatePerEntry = 0.5; // vehicles/sec per entry edge
+  let mixTruckPct = 15; // percent LKW
+
+  // Driver preset controls
+  let preset = 'normal';
+  let sightScale = 1.0;
+  let tauSd = 0.15;
+
+  const HARD_BRAKE_FACTOR = 2.0;
+
+  // ====== RNG ======
+  const rng = mulberry32(0xC0FFEE77);
+  function mulberry32(a){return function(){var t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}};
+  function rand(){ return rng(); }
+  function randNorm(mean, sd){ let u=0,v=0; while(!u) u=rand(); while(!v) v=rand(); const z=Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); return mean+z*sd; }
+  const clamp=(v,min,max)=>v<min?min:(v>max?max:v);
+
+  // ====== Vehicle Types (2 m/px) ======
+  const VEH_TYPES={ car:{len:3,w:2,aMax:1.0,bMax:1.5}, truck:{len:6,w:2,aMax:0.7,bMax:1.1} };
+
+  // ====== Network Topology ======
+  // Grid (orthogonal) — normalized positions; actual px computed on resize
+  // 3 rows × 4 cols → 12 Knoten
+  const R=3, C=4; const nodes = new Map(); // id -> {id,x,y}
+  const undirected = []; // list of [id1,id2]
+  const edges = new Map(); // key a->b
+  const junctions = new Map(); // nodeId -> {id,queues,busyUntil,incomings:Map(dir->inKey)}
+  let entryEdges = []; // eligible entries (directed a->b from border toward center)
+  let borderNodes = new Set();
+
+  function nodeId(r,c){ return r+"-"+c; }
+
+  function buildGridUndirected(){
+    undirected.length=0; nodes.clear(); borderNodes = new Set();
+    for(let r=0;r<R;r++){
+      for(let c=0;c<C;c++){
+        const id=nodeId(r,c);
+        nodes.set(id,{id, nx: c/(C-1), ny: r/(R-1), x:0, y:0});
+        if(r===0||c===0||r===R-1||c===C-1) borderNodes.add(id);
+        if(c<C-1) undirected.push([id,nodeId(r,c+1)]);
+        if(r<R-1) undirected.push([id,nodeId(r+1,c)]);
+      }
+    }
+  }
+
+  function rebuildGeometry(){
+    // place nodes (with margin)
+    const margin = 60;
+    for(const n of nodes.values()){
+      n.x = margin + n.nx*(W-2*margin);
+      n.y = margin + n.ny*(H-2*margin);
+    }
+    // create directed edges & junctions
+    edges.clear(); junctions.clear(); entryEdges = [];
+    for(const [u,v] of undirected){
+      makeDirected(u,v); makeDirected(v,u);
+    }
+    // build junction maps and precompute right/blockers
+    for(const n of nodes.values()){
+      if(!junctions.has(n.id)) junctions.set(n.id,{id:n.id, x:n.x, y:n.y, queues:new Map(), busyUntil:0, incomings:new Map()});
+    }
+    for(const e of edges.values()){
+      const J = junctions.get(e.b);
+      const inKey = e.key;
+      J.incomings.set(e.dir, inKey);
+      if(!J.queues.has(inKey)) J.queues.set(inKey, []);
+    }
+    // entries: from border nodes towards center (heuristic)
+    const cx = W/2, cy = H/2;
+    for(const e of edges.values()){
+      if(!borderNodes.has(e.a)) continue;
+      // direction should go roughly inward
+      const midx=(nodes.get(e.a).x+nodes.get(e.b).x)/2, midy=(nodes.get(e.a).y+nodes.get(e.b).y)/2;
+      const dCenter = Math.hypot(midx-cx, midy-cy);
+      const dStart = Math.hypot(nodes.get(e.a).x-cx, nodes.get(e.a).y-cy);
+      if(dCenter < dStart) entryEdges.push(e.key);
+    }
+  }
+
+  function makeDirected(aId,bId){
+    const A=nodes.get(aId), B=nodes.get(bId);
+    const dx=B.x-A.x, dy=B.y-A.y;
+    let dir, orient, len, sx,sy,ex,ey;
+    if(Math.abs(dy) < 1e-6){ orient='H'; len=Math.abs(dx); sx=A.x; ex=B.x; sy=ey=A.y; dir = (dx>0)?'E':'W'; }
+    else { orient='V'; len=Math.abs(dy); sy=A.y; ey=B.y; sx=ex=A.x; dir = (dy>0)?'S':'N'; }
+    const key = aId+"->"+bId;
+    edges.set(key,{ key,a:aId,b:bId, len, orient, dir, sx,sy,ex,ey });
+  }
+
+  function edgeLanePoint(e, s){
+    if(e.orient==='H'){
+      const y0 = (e.dir==='E') ? (e.sy - laneWidth/2) : (e.sy + laneWidth/2);
+      const x = (e.dir==='E') ? (e.sx + s) : (e.sx - s);
+      return {x, y:y0};
+    } else {
+      const x0 = (e.dir==='S') ? (e.sx - laneWidth/2) : (e.sx + laneWidth/2);
+      const y = (e.dir==='S') ? (e.sy + s) : (e.sy - s);
+      return {x:x0, y};
+    }
+  }
+
+  // Conflicts & priority helpers
+  const rightOf = {E:'S', S:'W', W:'N', N:'E'};
+  function blockersFor(dir){ return (dir==='E'||dir==='W')? ['N','S'] : ['E','W']; }
+
+  // ====== Routing ======
+  function shortestPath(startId, goalId){
+    if(startId===goalId) return [startId];
+    const q=[startId]; const prev=new Map([[startId,null]]);
+    while(q.length){
+      const u=q.shift(); if(u===goalId) break;
+      for(const v of neighbors(u)){ if(!prev.has(v)){ prev.set(v,u); q.push(v);} }
+    }
+    if(!prev.has(goalId)) return null; const path=[]; let cur=goalId; while(cur){ path.push(cur); cur=prev.get(cur);} return path.reverse();
+  }
+  function neighbors(id){
+    const out=[]; for(const [u,v] of undirected){ if(u===id) out.push(v); if(v===id) out.push(u); } return out;
+  }
+
+  // ====== Cars ======
+  let tSim=0; let carSeq=1;
+
+  function presetParams(){ if(preset==='defensiv') return { v0:6.3, T:1.5, tauMean:0.6, aMax:0.8, bMax:1.2 };
+    if(preset==='aggressiv') return { v0:7.0, T:0.9, tauMean:0.4, aMax:1.2, bMax:1.7 }; return { v0:6.7, T:1.2, tauMean:0.5, aMax:1.0, bMax:1.5 }; }
+
+  function newProfile(typeKey){
+    const base=presetParams();
+    const T=clamp(randNorm(base.T,0.2),0.7,1.9);
+    const tau=clamp(randNorm(base.tauMean,tauSd),0.2,1.0);
+    const v0=clamp(randNorm(base.v0,0.35),4.5,V_MAX_PX());
+    const s0=clamp(randNorm(1.2,0.4),0.5,2.5);
+    const sightPx=clamp(randNorm(50*sightScale,8*sightScale),30,120);
+    const noise=clamp(randNorm(0.05,0.02),0,0.12);
+    const typ=VEH_TYPES[typeKey];
+    const aMax=clamp(typ.aMax*(0.9+0.2*rand())*(base.aMax/1.0),0.4,1.6);
+    const bMax=clamp(typ.bMax*(0.9+0.2*rand())*(base.bMax/1.5),0.7,2.2);
+    return {T,tau,v0,s0,sightPx,noise,aMax,bMax};
+  }
+
+  function trySpawnOnEntry(eKey){
+    const e=edges.get(eKey); if(!e) return false;
+    const typeKey = (rand()*100 < mixTruckPct)? 'truck':'car';
+    const P=newProfile(typeKey);
+    const len=VEH_TYPES[typeKey].len, w=VEH_TYPES[typeKey].w;
+    const sSpawn=1; // 1px from start
+    // capacity check at start
+    const edgeCars = cars.filter(c=>c.edgeKey===eKey).sort((a,b)=>a.s-b.s);
+    const first=edgeCars[0]; if(first){ const gap=first.s - first.len; if(gap < (P.s0 + len + 2)) return false; }
+
+    // route: from e.a via e.b to a random border exit
+    const exits = Array.from(borderNodes);
+    let goal = exits[(rand()*exits.length)|0];
+    // ensure not start
+    for(let t=0;t<8 && goal===e.a;t++) goal = exits[(rand()*exits.length)|0];
+    // path from e.b to goal, then prepend a
+    const p2 = shortestPath(e.b, goal) || [e.b];
+    const path = [e.a, e.b, ...p2.slice(1)];
+
+    const car={ id:carSeq++, type:typeKey, len,w, v:Math.min(P.v0,0.5*V_MAX_PX()), a:0,
+      T:P.T,tau:P.tau,v0:P.v0,s0:P.s0,sightPx:P.sightPx,noise:P.noise,aMax:P.aMax,bMax:P.bMax,
+      path, nodeIdx:0, edgeKey:eKey, s:sSpawn, state:'run', queueKey:null,
+      leadSamples:[] };
+    cars.push(car); addRow(car); return true;
+  }
+
+  function edgeOf(car){ return edges.get(car.edgeKey); }
+
+  // ====== Queueing & Crossing ======
+  function inKeyFor(e){ return e.key; }
+  function ensureQueue(J, inKey){ if(!J.queues.has(inKey)) J.queues.set(inKey, []); return J.queues.get(inKey); }
+
+  function queueAtNode(car){
+    const e=edgeOf(car); const J=junctions.get(e.b); const inKey=inKeyFor(e);
+    const Q=ensureQueue(J,inKey);
+    if(!Q.includes(car.id)) Q.push(car.id);
+    car.state='queued'; car.queueKey=inKey;
+  }
+
+  function isQueueHead(car){ const e=edgeOf(car); const J=junctions.get(e.b); const Q=ensureQueue(J, e.key); return Q[0]===car.id; }
+
+  function peekApproachHead(inKey){
+    const e=edges.get(inKey); const J=junctions.get(e.b); const Q=ensureQueue(J,inKey);
+    if(Q.length) return cars.find(c=>c.id===Q[0]);
+    // else find nearest on edge (before stop)
+    const edgeCars = cars.filter(c=>c.edgeKey===inKey);
+    let best=null, minRemain=Infinity; const sStop = Math.max(0, edges.get(inKey).len - stopDist);
+    for(const c of edgeCars){ const remain=sStop - c.s; if(remain>=0 && remain<minRemain){ minRemain=remain; best=c; } }
+    return best;
+  }
+
+  function etaToStop(c, e){
+    const sStop = Math.max(0, e.len - stopDist);
+    const remain = sStop - c.s;
+    const v = Math.max(0.01, c.v);
+    return (remain>0)? (remain / v) : 0;
+  }
+
+  function canCrossNow(car){
+    const e=edgeOf(car); const J=junctions.get(e.b);
+    // must be queue head
+    if(!isQueueHead(car)) return false;
+    // junction free?
+    if(tSim < J.busyUntil) return false;
+
+    // right-before-left: give way to approach on the right only if they can also go
+    const rightDir = rightOf[e.dir];
+    const inRight = J.incomings.get(rightDir);
+    if(inRight){
+      const rHead = peekApproachHead(inRight);
+      if(rHead){
+        // if right-head also meets gap conditions + space ahead, then we yield
+        if(gapOK(rHead) && spaceAheadOK(rHead)) return false;
+      }
+    }
+
+    // perpendicular blockers: need adequate gap
+    if(!gapOK(car)) return false;
+    // space on next edge
+    if(!spaceAheadOK(car)) return false;
+
+    return true;
+  }
+
+  function gapOK(car){
+    const e=edgeOf(car); const J=junctions.get(e.b);
+    const blockers = blockersFor(e.dir).map(d=>J.incomings.get(d)).filter(Boolean);
+    const need = Math.max(1.2, 1.6 * car.T); // s
+    for(const inK of blockers){
+      const other = peekApproachHead(inK); if(!other) continue;
+      const eOther = edges.get(inK);
+      const eta = etaToStop(other, eOther);
+      if(eta < need) return false;
+    }
+    return true;
+  }
+
+  function spaceAheadOK(car){
+    const e=edgeOf(car); // current a->b
+    // next edge from b -> nextNode
+    if(car.nodeIdx >= car.path.length-2) return true; // exiting
+    const nextA = car.path[car.nodeIdx+1];
+    const nextB = car.path[car.nodeIdx+2];
+    const nextKey = nextA+"->"+nextB;
+    const en = edges.get(nextKey); if(!en) return false;
+    // check first car near start
+    const edgeCars = cars.filter(c=>c.edgeKey===nextKey).sort((a,b)=>a.s-b.s);
+    if(edgeCars.length===0) return true;
+    const first=edgeCars[0];
+    const need = car.s0 + first.len + 1;
+    return first.s > need;
+  }
+
+  function commitCross(car){
+    const e=edgeOf(car); const J=junctions.get(e.b);
+    const Q=ensureQueue(J, e.key); Q.shift(); // leave queue
+    J.busyUntil = tSim + crossTime;
+    // advance to next edge or exit
+    if(car.nodeIdx >= car.path.length-2){ // at destination node
+      removeCar(car); return;
+    }
+    const nextA = car.path[car.nodeIdx+1];
+    const nextB = car.path[car.nodeIdx+2];
+    const nextKey = nextA+"->"+nextB;
+    // detach and attach
+    car.edgeKey = nextKey; car.nodeIdx++; car.s = 0; car.state='run'; car.queueKey=null;
+  }
+
+  // ====== Dynamics (IDM on edges) ======
+  const HARD_S_CRIT = 1; // px
+
+  function observeLeaders(){
+    for(const c of cars){
+      // leader = next car on same edge with larger s
+      const e=edgeOf(c); if(!e) continue;
+      let lead=null, minDs=Infinity;
+      for(const o of cars){ if(o===c || o.edgeKey!==c.edgeKey) continue; const ds=o.s - c.s; if(ds>0 && ds<minDs){ minDs=ds; lead=o; } }
+      // store delayed perception sample
+      const n = (1 - c.noise) + (2*c.noise)*rand();
+      if(lead) c.leadSamples.push({t:tSim, s:lead.s*n, v:lead.v*n, len:lead.len});
+      else c.leadSamples.push({t:tSim, s:Infinity, v:0, len:0});
+      while(c.leadSamples.length && (tSim - c.leadSamples[0].t) > 3) c.leadSamples.shift();
+    }
+  }
+
+  function sampleLeader(c){
+    const target = tSim - c.tau; const arr=c.leadSamples;
+    if(arr.length===0) return {s:Infinity,v:0,len:0};
+    for(let i=arr.length-1;i>=0;i--){ if(arr[i].t<=target) return arr[i]; }
+    return arr[0];
+  }
+
+  function stepDynamics(dt){
+    observeLeaders();
+    for(const c of cars){
+      const e=edgeOf(c); if(!e) continue;
+      // free road IDM vs leader
+      let sLead=Infinity, vLead=0, lenLead=0;
+      const L = sampleLeader(c); sLead=L.s; vLead=L.v; lenLead=L.len;
+
+      // Approach handling: if near stop and cannot cross, treat stop-line as leader at rest
+      const sStop = Math.max(0, e.len - stopDist);
+      const distToStop = sStop - c.s;
+      let stopActive = false;
+      if(distToStop < brakingZone){
+        // enter queue
+        queueAtNode(c);
+        // if cannot cross now, enforce stop leader
+        if(!canCrossNow(c)){
+          sLead = Math.min(sLead, sStop - c.s); // distance to stop line relative
+          vLead = 0; lenLead = 0; stopActive = true;
+        }
+      } else {
+        // not in approach
+        if(c.state==='queued') c.state='approach';
+      }
+
+      // IDM
+      let s = sLead; if(isFinite(s)) s = Math.max(0.0001, s - lenLead);
+      const dv = c.v - Math.max(0, vLead);
+      const twoSqrt = 2*Math.sqrt(Math.max(0.0001, c.aMax*c.bMax));
+      const sStar = c.s0 + c.v*c.T + (isFinite(sLead)? (c.v * dv)/twoSqrt : 0);
+      let a = c.aMax * (1 - Math.pow(c.v / Math.max(0.0001, c.v0), 4) - Math.pow(sStar / Math.max(0.0001, isFinite(s)?s:99999), 2));
+      if(isFinite(s) && s < HARD_S_CRIT){ a = -HARD_BRAKE_FACTOR*c.bMax; }
+      a = clamp(a, -HARD_BRAKE_FA
