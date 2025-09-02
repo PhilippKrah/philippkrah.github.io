@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="de">
+<!DOCTYPE html>
+<html lang="de">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
@@ -8,46 +9,47 @@
       --bg:#000; --panel:#141414; --panel-border:#2a2a2a; --text:#fff; --muted:#bdbdbd;
       --accent:#5ec8ff; --shadow:0 8px 24px rgba(0,0,0,0.45);
     }
-    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:14px system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}/* Layout */
-#layout{height:100%;display:grid;grid-template-columns:1fr 460px;grid-template-rows:1fr;gap:8px;padding:8px;box-sizing:border-box}
-#map{position:relative;background:#111;border:1px solid var(--panel-border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
-#rightCol{display:flex;flex-direction:column;gap:8px;min-width:320px}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:14px system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
 
-.panel{background:var(--panel);border:1px solid var(--panel-border);border-radius:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:0}
-.panel header{position:sticky;top:0;background:var(--panel);padding:10px 12px;border-bottom:1px solid var(--panel-border);display:flex;align-items:center;justify-content:space-between;gap:8px}
-.title{font-weight:600}
-.pill{display:inline-block;border:1px solid var(--panel-border);border-radius:999px;padding:3px 10px;font-size:12px;color:#cfcfcf}
-.body{overflow:auto;padding:10px 12px}
+    /* Layout */
+    #layout{height:100%;display:grid;grid-template-columns:1fr 460px;grid-template-rows:1fr;gap:8px;padding:8px;box-sizing:border-box}
+    #map{position:relative;background:#111;border:1px solid var(--panel-border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+    #rightCol{display:flex;flex-direction:column;gap:8px;min-width:320px}
 
-.controls{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
-.row{display:contents}
-.row label{color:var(--muted)}
-.row input[type="range"]{width:160px}
-.row .val{min-width:64px;text-align:right}
-.row select{width:160px}
-.btns{display:flex;gap:8px;flex-wrap:wrap}
-button{appearance:none;background:#1f1f1f;border:1px solid var(--panel-border);color:#fff;border-radius:10px;padding:9px 12px}
-button:active{transform:translateY(1px)}
+    .panel{background:var(--panel);border:1px solid var(--panel-border);border-radius:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:0}
+    .panel header{position:sticky;top:0;background:var(--panel);padding:10px 12px;border-bottom:1px solid var(--panel-border);display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .title{font-weight:600}
+    .pill{display:inline-block;border:1px solid var(--panel-border);border-radius:999px;padding:3px 10px;font-size:12px;color:#cfcfcf}
+    .body{overflow:auto;padding:10px 12px}
 
-/* Inspector */
-#inspector .body{overflow:auto}
-#inspector table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-#inspector th,#inspector td{border-bottom:1px solid #262626;padding:8px 10px;text-align:left}
-#inspector th{position:sticky;top:46px;background:var(--panel);z-index:1}
-#inspector tr:hover{background:#1b1b1b;cursor:pointer}
-.sel{outline:2px solid var(--accent);outline-offset:2px}
-.muted{color:var(--muted)}
+    .controls{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+    .row{display:contents}
+    .row label{color:var(--muted)}
+    .row input[type="range"]{width:160px}
+    .row .val{min-width:64px;text-align:right}
+    .row select{width:160px}
+    .btns{display:flex;gap:8px;flex-wrap:wrap}
+    button{appearance:none;background:#1f1f1f;border:1px solid var(--panel-border);color:#fff;border-radius:10px;padding:9px 12px}
+    button:active{transform:translateY(1px)}
 
-/* Canvas */
-#cv{position:absolute;inset:0;display:block;width:100%;height:100%}
+    /* Inspector */
+    #inspector .body{overflow:auto}
+    #inspector table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+    #inspector th,#inspector td{border-bottom:1px solid #262626;padding:8px 10px;text-align:left}
+    #inspector th{position:sticky;top:46px;background:var(--panel);z-index:1}
+    #inspector tr:hover{background:#1b1b1b;cursor:pointer}
+    .sel{outline:2px solid var(--accent);outline-offset:2px}
+    .muted{color:var(--muted)}
 
-/* Mobile */
-@media (max-width: 980px){
-  html,body{font-size:16px}
-  #layout{grid-template-columns:1fr;grid-template-rows:minmax(40vh,58vh) auto auto;gap:8px}
-  #rightCol{min-width:0}
-}
+    /* Canvas */
+    #cv{position:absolute;inset:0;display:block;width:100%;height:100%}
 
+    /* Mobile */
+    @media (max-width: 980px){
+      html,body{font-size:16px}
+      #layout{grid-template-columns:1fr;grid-template-rows:minmax(40vh,58vh) auto auto;gap:8px}
+      #rightCol{min-width:0}
+    }
   </style>
 </head>
 <body>
@@ -66,70 +68,73 @@ button:active{transform:translateY(1px)}
           <div class="controls">
             <!-- Ebene 1 -->
             <div class="row"><label>Spawnrate je Einfahrt</label><div class="val"><span id="spawnRateVal">0.50</span> /s</div></div>
-            <input id="spawnRate" type="range" min="0" max="2" step="0.05" value="0.5" /><div class="row"><label>Fahrzeugmix LKW</label><div class="val"><span id="mixTruckVal">15</span>%</div></div>
-        <input id="mixTruck" type="range" min="0" max="80" step="1" value="15" />
+            <input id="spawnRate" type="range" min="0" max="2" step="0.05" value="0.5" />
 
-        <div class="row"><label>Max. Geschwindigkeit</label><div class="val"><span id="vmaxVal">50</span> km/h</div></div>
-        <input id="vmax" type="range" min="20" max="70" step="5" value="50" />
+            <div class="row"><label>Fahrzeugmix LKW</label><div class="val"><span id="mixTruckVal">15</span>%</div></div>
+            <input id="mixTruck" type="range" min="0" max="80" step="1" value="15" />
 
-        <div class="row"><label>Zeitraffer</label><div class="val"><span id="timeScaleVal">1.0</span>×</div></div>
-        <input id="timeScale" type="range" min="0.25" max="5" step="0.25" value="1" />
+            <div class="row"><label>Max. Geschwindigkeit</label><div class="val"><span id="vmaxVal">50</span> km/h</div></div>
+            <input id="vmax" type="range" min="20" max="70" step="5" value="50" />
 
-        <div class="row"><label class="muted">Steuerung</label>
-          <div class="btns">
-            <button id="pauseBtn">⏸︎ Pause</button>
-            <button id="resetBtn">⟲ Reset</button>
+            <div class="row"><label>Zeitraffer</label><div class="val"><span id="timeScaleVal">1.0</span>×</div></div>
+            <input id="timeScale" type="range" min="0.25" max="5" step="0.25" value="1" />
+
+            <div class="row"><label class="muted">Steuerung</label>
+              <div class="btns">
+                <button id="pauseBtn">⏸︎ Pause</button>
+                <button id="resetBtn">⟲ Reset</button>
+              </div>
+            </div>
+
+            <!-- Ebene 3 -->
+            <div class="row"><label>Fahrerprofil</label>
+              <select id="driverPreset">
+                <option value="normal" selected>normal</option>
+                <option value="defensiv">defensiv</option>
+                <option value="aggressiv">aggressiv</option>
+              </select>
+            </div>
+            <div></div>
+
+            <div class="row"><label>Sichtweite (Skalierung)</label><div class="val"><span id="sightScaleVal">1.0</span>×</div></div>
+            <input id="sightScale" type="range" min="0.5" max="2" step="0.1" value="1" />
+
+            <div class="row"><label>Reaktionszeit‑Streuung</label><div class="val">±<span id="tauSdVal">0.15</span> s</div></div>
+            <input id="tauSd" type="range" min="0.05" max="0.5" step="0.05" value="0.15" />
+
           </div>
         </div>
+      </section>
 
-        <!-- Ebene 3 -->
-        <div class="row"><label>Fahrerprofil</label>
-          <select id="driverPreset">
-            <option value="normal" selected>normal</option>
-            <option value="defensiv">defensiv</option>
-            <option value="aggressiv">aggressiv</option>
-          </select>
+      <!-- INSPECTOR -->
+      <section id="inspector" class="panel" style="min-height:0;flex:1 1 auto;">
+        <header>
+          <div class="title">Inspector</div>
+          <div class="pill" id="count">0 Fahrzeuge</div>
+        </header>
+        <div class="body">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Typ</th>
+                <th>v (km/h)</th>
+                <th>a</th>
+                <th>v₀</th>
+                <th>T</th>
+                <th>τ</th>
+                <th>State</th>
+                <th>Edge</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
         </div>
-        <div></div>
+      </section>
+    </section>
+  </div>
 
-        <div class="row"><label>Sichtweite (Skalierung)</label><div class="val"><span id="sightScaleVal">1.0</span>×</div></div>
-        <input id="sightScale" type="range" min="0.5" max="2" step="0.1" value="1" />
-
-        <div class="row"><label>Reaktionszeit‑Streuung</label><div class="val">±<span id="tauSdVal">0.15</span> s</div></div>
-        <input id="tauSd" type="range" min="0.05" max="0.5" step="0.05" value="0.15" />
-
-      </div>
-    </div>
-  </section>
-
-  <!-- INSPECTOR -->
-  <section id="inspector" class="panel" style="min-height:0;flex:1 1 auto;">
-    <header>
-      <div class="title">Inspector</div>
-      <div class="pill" id="count">0 Fahrzeuge</div>
-    </header>
-    <div class="body">
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Typ</th>
-            <th>v (km/h)</th>
-            <th>a</th>
-            <th>v₀</th>
-            <th>T</th>
-            <th>τ</th>
-            <th>State</th>
-            <th>Edge</th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
-  </section>
-</section>
-
-  </div><script>
+<script>
 'use strict';
 (() => {
   // ====== Global State ======
@@ -485,11 +490,167 @@ button:active{transform:translateY(1px)}
         if(c.state==='queued') c.state='approach';
       }
 
-      // IDM
+          // IDM
       let s = sLead; if(isFinite(s)) s = Math.max(0.0001, s - lenLead);
       const dv = c.v - Math.max(0, vLead);
       const twoSqrt = 2*Math.sqrt(Math.max(0.0001, c.aMax*c.bMax));
       const sStar = c.s0 + c.v*c.T + (isFinite(sLead)? (c.v * dv)/twoSqrt : 0);
       let a = c.aMax * (1 - Math.pow(c.v / Math.max(0.0001, c.v0), 4) - Math.pow(sStar / Math.max(0.0001, isFinite(s)?s:99999), 2));
       if(isFinite(s) && s < HARD_S_CRIT){ a = -HARD_BRAKE_FACTOR*c.bMax; }
-      a = clamp(a, -HARD_BRAKE_FA
+      a = clamp(a, -HARD_BRAKE_FACTOR*c.bMax, c.aMax);
+
+      // integrate
+      c.a = a;
+      // respect global vmax
+      c.v0 = Math.min(c.v0, V_MAX_PX());
+      c.v = clamp(c.v + a*dt, 0, c.v0);
+      c.s += c.v * dt;
+
+      // Crossing: once past stop and allowed
+      if(stopActive){
+        if(canCrossNow(c) && c.s >= sStop-0.01){ commitCross(c); }
+      } else {
+        // normal edge end -> auto commit if reached and allowed (or exit)
+        if(c.s >= e.len){
+          if(c.nodeIdx >= c.path.length-2){ removeCar(c); }
+          else { // arrived at node without queuing (low traffic); still enforce crossing rules
+            queueAtNode(c);
+            if(canCrossNow(c)) commitCross(c); else c.s = Math.min(c.s, sStop); // wait at line
+          }
+        }
+      }
+    }
+  }
+
+  function removeCar(car){
+    const i=cars.indexOf(car); if(i>=0) cars.splice(i,1);
+    const tr=carRow.get(car.id); if(tr&&tr.parentNode) tr.parentNode.removeChild(tr); carRow.delete(car.id);
+    if(selectedId===car.id) selectedId=null; updateCount();
+  }
+
+  // ====== Spawning ======
+  const entryList = ()=> entryEdges.slice();
+  function spawnStep(dt){
+    for(const key of entryList()){
+      const p = spawnRatePerEntry * dt;
+      if(Math.random() < p){ trySpawnOnEntry(key); }
+    }
+  }
+
+  // ====== Rendering ======
+  function drawRoads(){
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
+    // draw each undirected once
+    const seen = new Set();
+    for(const [u,v] of undirected){
+      const k = u < v ? u+"|"+v : v+"|"+u; if(seen.has(k)) continue; seen.add(k);
+      const A=nodes.get(u), B=nodes.get(v);
+      if(Math.abs(A.y-B.y) < 1e-6){ // horizontal
+        const y=A.y; const x1=Math.min(A.x,B.x), x2=Math.max(A.x,B.x);
+        // upper boundary
+        ctx.beginPath(); ctx.moveTo(x1, y - laneWidth); ctx.lineTo(x2, y - laneWidth); ctx.stroke();
+        // dashed center
+        ctx.setLineDash([6,6]); ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y); ctx.stroke(); ctx.setLineDash([]);
+        // lower boundary
+        ctx.beginPath(); ctx.moveTo(x1, y + laneWidth); ctx.lineTo(x2, y + laneWidth); ctx.stroke();
+      } else { // vertical
+        const x=A.x; const y1=Math.min(A.y,B.y), y2=Math.max(A.y,B.y);
+        ctx.beginPath(); ctx.moveTo(x - laneWidth, y1); ctx.lineTo(x - laneWidth, y2); ctx.stroke();
+        ctx.setLineDash([6,6]); ctx.beginPath(); ctx.moveTo(x, y1); ctx.lineTo(x, y2); ctx.stroke(); ctx.setLineDash([]);
+        ctx.beginPath(); ctx.moveTo(x + laneWidth, y1); ctx.lineTo(x + laneWidth, y2); ctx.stroke();
+      }
+    }
+
+    // optional: stop lines at entries of junctions
+    ctx.lineWidth = 1;
+    for(const e of edges.values()){
+      // draw a short stop line across the lane at sStop
+      const sStop = Math.max(0, e.len - stopDist);
+      const P = edgeLanePoint(e, sStop);
+      if(e.orient==='H'){
+        ctx.beginPath(); ctx.moveTo(P.x, P.y - 3); ctx.lineTo(P.x, P.y + 3); ctx.stroke();
+      } else {
+        ctx.beginPath(); ctx.moveTo(P.x - 3, P.y); ctx.lineTo(P.x + 3, P.y); ctx.stroke();
+      }
+    }
+  }
+
+  function drawCars(){
+    for(const c of cars){
+      const e=edgeOf(c); if(!e) continue;
+      const p = edgeLanePoint(e, c.s);
+      const sel = (c.id===selectedId);
+      ctx.fillStyle = (c.type==='car')? '#7fd0ff' : '#ffd37f';
+      ctx.save(); ctx.translate(p.x, p.y);
+      // rotate for orientation
+      if(e.orient==='H') ctx.rotate(0); else ctx.rotate(Math.PI/2);
+      ctx.fillRect(-c.len/2, -c.w/2, c.len, c.w);
+      if(sel){ ctx.strokeStyle = '#5ec8ff'; ctx.lineWidth=1; ctx.strokeRect(-c.len/2-1, -c.w/2-1, c.len+2, c.w+2); }
+      ctx.restore();
+    }
+  }
+
+  // ====== Inspector ======
+  const TB=document.getElementById('tbody');
+  const COUNT=document.getElementById('count');
+  let inspectorAccum=0;
+  function addRow(c){
+    const tr=document.createElement('tr'); tr.dataset.id=c.id;
+    const e=edgeOf(c); const edgeLbl = e? (e.a+"→"+e.b) : '-';
+    tr.innerHTML=`
+      <td class="muted">${c.id}</td>
+      <td>${c.type}</td>
+      <td data-kmh>0</td>
+      <td data-acc>0</td>
+      <td data-v0>${pxpsToKmh(c.v0).toFixed(0)}</td>
+      <td data-T>${c.T.toFixed(2)}</td>
+      <td data-tau>${c.tau.toFixed(2)}</td>
+      <td data-state>${c.state}</td>
+      <td data-edge>${edgeLbl}</td>`;
+    tr.addEventListener('click',()=>{ selectedId=c.id; highlightRow(c.id); });
+    TB.prepend(tr); carRow.set(c.id,tr); updateCount();
+  }
+  function highlightRow(id){ for(const [cid,row] of carRow){ row.classList.toggle('sel', cid===id); } }
+  function updateCount(){ COUNT.textContent=`${cars.length} Fahrzeuge`; }
+  function inspectorStep(dt){ inspectorAccum+=dt; if(inspectorAccum<0.25) return; inspectorAccum=0; updateCount();
+    for(const c of cars){ const tr=carRow.get(c.id); if(!tr) continue; const e=edgeOf(c);
+      const kmhCell=tr.querySelector('[data-kmh]'); const accCell=tr.querySelector('[data-acc]');
+      const stateCell=tr.querySelector('[data-state]'); const edgeCell=tr.querySelector('[data-edge]');
+      if(kmhCell) kmhCell.textContent=pxpsToKmh(c.v).toFixed(0);
+      if(accCell) accCell.textContent=c.a.toFixed(2);
+      if(stateCell) stateCell.textContent=c.state;
+      if(edgeCell) edgeCell.textContent = e? (e.a+"→"+e.b) : '-';
+    }
+  }
+
+  // ====== Main Loop ======
+  let last=performance.now();
+  function loop(ts){
+    let dt=(ts-last)/1000; last=ts; dt=Math.max(0,Math.min(0.1,dt)); dt*=timeScale;
+    if(!paused){ tSim+=dt; spawnStep(dt); stepDynamics(dt); }
+    ctx.clearRect(0,0,W,H); drawRoads(); drawCars(); inspectorStep(dt); requestAnimationFrame(loop);
+  }
+
+  // ====== Controls ======
+  const Q=id=>document.getElementById(id);
+  const simState=Q('simState');
+  const spawnRate=Q('spawnRate'); const spawnRateVal=Q('spawnRateVal');
+  spawnRate.addEventListener('input',()=>{ spawnRatePerEntry=+spawnRate.value; spawnRateVal.textContent=spawnRate.value; });
+  const mixTruck=Q('mixTruck'); const mixTruckVal=Q('mixTruckVal');
+  mixTruck.addEventListener('input',()=>{ mixTruckPct=+mixTruck.value; mixTruckVal.textContent=mixTruck.value; });
+  const vmax=Q('vmax'); const vmaxVal=Q('vmaxVal');
+  vmax.addEventListener('input',()=>{ V_MAX_KMH=+vmax.value; vmaxVal.textContent=vmax.value; for(const c of cars){ c.v0=Math.min(c.v0,V_MAX_PX()); c.v=Math.min(c.v,c.v0);} });
+  const timeScaleEl=Q('timeScale'); const timeScaleVal=Q('timeScaleVal');
+  timeScaleEl.addEventListener('input',()=>{ timeScale=+timeScaleEl.value; timeScaleVal.textContent=timeScaleEl.value; });
+  Q('pauseBtn').addEventListener('click',()=>{ paused=!paused; simState.textContent=paused?'pausiert':'läuft'; Q('pauseBtn').textContent=paused?'▶︎ Weiter':'⏸︎ Pause'; });
+  Q('resetBtn').addEventListener('click',()=>{ for(const [id,row] of carRow){ if(row.parentNode) row.parentNode.removeChild(row);} carRow.clear(); cars.length=0; selectedId=null; updateCount(); });
+  const driverPreset=Q('driverPreset'); driverPreset.addEventListener('change',()=>{ preset=driverPreset.value; });
+  const sightScaleEl=Q('sightScale'); const sightScaleVal=Q('sightScaleVal'); sightScaleEl.addEventListener('input',()=>{ sightScale=+sightScaleEl.value; sightScaleVal.textContent=sightScaleEl.value; });
+  const tauSdEl=Q('tauSd'); const tauSdVal=Q('tauSdVal'); tauSdEl.addEventListener('input',()=>{ tauSd=+tauSdEl.value; tauSdVal.textContent=tauSdEl.value; });
+
+  // ====== Init ======
+  fitToMap(); buildGridUndirected(); rebuildGeometry(); requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
